@@ -32,6 +32,7 @@ const MongoDBConnect = () => {
       serverSelectionTimeoutMS: 5000,
     })
     .catch((err) => {
+      console.log('««««« err »»»»»', err);
       console.log('MongoDB connection unsuccessful, retry after 5 seconds.');
       setTimeout(MongoDBConnect, 5000);
     });
