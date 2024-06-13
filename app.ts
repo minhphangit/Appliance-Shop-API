@@ -20,17 +20,22 @@ const file = fs.readFileSync(path.resolve('./openapi.yaml'), 'utf8');
 const swaggerDocument = YAML.parse(file);
 
 //MongoDB connection with initial retry
+// Tạo URI kết nối từ biến môi trường
 const mongooseConnection = `mongodb://${process.env.MONGODB_USER}:${process.env.MONGODB_PASS}@${process.env.MONGODB_URL}`;
+
+// Thiết lập các sự kiện kết nối
 mongoose.connection.on('connected', () => console.log('Connected to ' + mongooseConnection));
 mongoose.connection.on('disconnected', () => console.log('MongoDB lost connection'));
 mongoose.connection.on('error', (error) => console.error('Error in MongoDb connection: ' + error));
 
+// Hàm kết nối MongoDB
 const MongoDBConnect = () => {
   mongoose
     .connect(mongooseConnection, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-      serverSelectionTimeoutMS: 10000,
+      serverSelectionTimeoutMS: 10000, // Thời gian chờ 10 giây
+    })
+    .then(() => {
+      console.log('MongoDB connection successful');
     })
     .catch((err) => {
       console.error('««««« err »»»»»', err);
@@ -39,6 +44,7 @@ const MongoDBConnect = () => {
     });
 };
 
+// Gọi hàm kết nối
 MongoDBConnect();
 
 const app: Express = express();
