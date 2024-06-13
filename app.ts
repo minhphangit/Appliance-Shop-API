@@ -61,8 +61,27 @@ AppDataSource.initialize().then(async () => {
     }),
   );
 
-  // use cors
-  app.use(cors({ origin: '*', credentials: true }));
+  const allowedOrigins = [
+    'https://appliance-shop-admin-blue.vercel.app/',
+    'https://appliance-shop-admin-blue.vercel.app/*',
+    'http://localhost:4000/',
+    'http://localhost:3000/',
+  ];
+
+  app.use(
+    cors({
+      origin: function (origin, callback) {
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) return callback(null, true);
+        if (allowedOrigins.indexOf(origin) === -1) {
+          const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+          return callback(new Error(msg), false);
+        }
+        return callback(null, true);
+      },
+      credentials: true,
+    }),
+  );
   app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
   app.use('/', indexRouter);
   app.use('/admin', adminRoutes);
