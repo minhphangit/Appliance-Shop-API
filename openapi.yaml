@@ -13,6 +13,8 @@ info:
   version: 1.0.11
 
 servers:
+  - url: https://appliance-shop-api.onrender.com/
+    description: onrender server
   - url: http://localhost:9000
     description: Local server
 tags:

@@ -61,11 +61,8 @@ AppDataSource.initialize().then(async () => {
     }),
   );
 
-  app.use(
-    cors({
-      origin: '*',
-    }),
-  );
+  // use cors
+  app.use(cors({ origin: true, credentials: true }));
   app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
   app.use('/', indexRouter);
   app.use('/admin', adminRoutes);
