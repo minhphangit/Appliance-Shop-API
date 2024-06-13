@@ -30,7 +30,7 @@ const MongoDBConnect = () => {
     .connect(mongooseConnection, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
-      serverSelectionTimeoutMS: 5000,
+      serverSelectionTimeoutMS: 10000,
     })
     .catch((err) => {
       console.error('««««« err »»»»»', err);
