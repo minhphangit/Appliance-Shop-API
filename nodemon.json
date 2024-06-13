@@ -1,0 +1,5 @@
+{
+  "watch": ["bin", "public", "tsconfig.json", ".env", "openapi.yaml"],
+  "ext": ".ts,.yaml,.json,.js",
+  "exec": "ts-node-dev --respawn --transpile-only --exit-child bin/www.ts"
+}

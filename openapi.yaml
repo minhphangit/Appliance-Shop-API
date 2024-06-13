@@ -1,0 +1,3326 @@
+openapi: 3.0.3
+info:
+  title: Appliance Shop API - OpenAPI 3.0
+  description: |-
+    This is a Home Appliances Store Server based on the OpenAPI 3.0 specification. API for device management in Home Appliance Stores.
+
+    Some useful links:
+    - [The Appliance Shop repository](https://github.com/minhcopilot/Appliance-Shop-API)
+    - [The source API definition for the Appliance Shop](https://github.com/minhcopilot/Appliance-Shop-API/openopenapi.yaml)
+
+  contact:
+    email: phanminh190502@gmail.com
+  version: 1.0.11
+
+servers:
+  - url: http://localhost:9000
+    description: Local server
+tags:
+  - name: authAdmin
+    description: Operations about authAdmin
+  - name: category
+    description: Operations about categories
+  - name: product
+    description: Operations about products
+  - name: customer
+    description: Operations about customers
+  - name: employee
+    description: Operations about employees
+  - name: supplier
+    description: Operations about suppliers
+  - name: order
+    description: Operations about orders
+  - name: voucher
+    description: Operations about vouchers
+  - name: cart
+    description: Operations about carts
+  - name: roles
+    description: Operations about roles
+  - name: article
+    description: Operations about article
+  - name: post
+    description: Operations about post
+  - name: comment
+    description: Operations about comment
+  - name: chat
+    description: Operations about chat
+  - name: authUser
+    description: Operations about authUser
+paths:
+  # Authentication Admin
+  /admin/auth/login:
+    post:
+      tags:
+        - authAdmin
+      summary: Login to the application
+      operationId: login
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  example: nvtest@gmail.com
+                password:
+                  type: string
+                  example: 123123
+
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                    example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImFkbWluIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+  /admin/auth/refresh-token:
+    post:
+      tags:
+        - authAdmin
+      summary: Refresh the authentication token
+      operationId: refreshToken
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                    example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImFkbWluIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+  /admin/auth/forgot-password:
+    post:
+      tags:
+        - authAdmin
+      summary: Initiates the forgot password process
+      operationId: forgotPassword
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  example: user@example.com
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Password reset email sent
+  /admin/auth/reset-password:
+    put:
+      tags:
+        - authAdmin
+      summary: Resets the user password
+      operationId: resetPassword
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                token:
+                  type: string
+                  example: reset-token
+                newPassword:
+                  type: string
+                  example: newPassword123
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Password has been reset
+
+  #Category
+  /categories:
+    get:
+      tags:
+        - category
+      summary: Get all categories
+      operationId: getCategories
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Category'
+    post:
+      tags:
+        - category
+      summary: Add a new category
+      operationId: addCategory
+      security:
+        - bearerAuth: []
+
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                name:
+                  type: string
+                  example: Các loại kệ giỏ
+                description:
+                  type: string
+                  example: Kệ giỏ để đồ dùng trong nhà
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+  /categories/{id}:
+    get:
+      tags:
+        - category
+      summary: Get a category by ID
+      operationId: getCategoryById
+      parameters:
+        - name: id
+          in: path
+          description: ID of the category to return
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+    patch:
+      tags:
+        - category
+      summary: Update a category
+      operationId: updateCategory
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          description: ID of the category to update
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Category'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+    delete:
+      tags:
+        - category
+      summary: Delete a category
+      operationId: deleteCategory
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          description: ID of the category to delete
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+
+  #Product
+  /products/suggestions:
+    get:
+      tags:
+        - product
+      summary: Get product suggestions by keyword
+      parameters:
+        - name: keyword
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+
+  /products:
+    get:
+      tags:
+        - product
+      summary: Get all products
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Product'
+        '204':
+          description: No products
+        '500':
+          description: Internal Server Error
+
+    post:
+      tags:
+        - product
+      summary: Create a new product
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                description:
+                  type: string
+                price:
+                  type: number
+                  format: float
+                categoryId:
+                  type: integer
+                supplierId:
+                  type: integer
+                files:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '400':
+          description: Product already exists
+        '500':
+          description: Internal Server Error
+
+  /products/category/{categoryId}:
+    get:
+      tags:
+        - product
+      summary: Get products by category
+      parameters:
+        - name: categoryId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Product'
+        '204':
+          description: No products found for this category
+        '500':
+          description: Internal Server Error
+
+  /products/search:
+    get:
+      tags:
+        - product
+      summary: Search products by keyword (name and description)
+      parameters:
+        - name: keyword
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Product'
+        '204':
+          description: No products found
+        '500':
+          description: Internal Server Error
+
+  /products/{id}:
+    get:
+      tags:
+        - product
+      summary: Get product by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '404':
+          description: Not found
+        '500':
+          description: Internal Server Error
+
+    patch:
+      tags:
+        - product
+      summary: Update a product
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                description:
+                  type: string
+                price:
+                  type: number
+                  format: float
+                categoryId:
+                  type: integer
+                supplierId:
+                  type: integer
+                files:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+                removeFiles:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '404':
+          description: Not found
+        '500':
+          description: Internal Server Error
+
+    delete:
+      tags:
+        - product
+      summary: Delete a product
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Deleted successfully
+        '404':
+          description: Not found
+        '500':
+          description: Internal Server Error
+
+  /products/sorted-by-price:
+    get:
+      tags:
+        - product
+      summary: Get products sorted by price
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Product'
+        '204':
+          description: No products
+        '500':
+          description: Internal Server Error
+
+  /products/uploads/{id}:
+    post:
+      tags:
+        - product
+      summary: Upload images for a product
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                files:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+      responses:
+        '200':
+          description: Success
+        '500':
+          description: Internal Server Error
+
+  /products/upload/{id}:
+    post:
+      tags:
+        - product
+      summary: Upload an image for a product
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: Success
+        '500':
+          description: Internal Server Error
+
+  #Customer
+  /customers:
+    get:
+      summary: Get all customers
+      tags:
+        - customer
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: A list of customers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Customer'
+        '204':
+          description: No content
+        '500':
+          description: Internal server error
+    post:
+      summary: Create a new customer
+      tags:
+        - customer
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewCustomer'
+      responses:
+        '200':
+          description: Customer created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Customer'
+        '400':
+          description: Account already exists
+        '500':
+          description: Internal server error
+
+  /customers/{id}:
+    get:
+      summary: Get customer by ID
+      tags:
+        - customer
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Customer data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Customer'
+        '410':
+          description: Customer not found
+        '500':
+          description: Internal server error
+
+    patch:
+      summary: Update customer by ID
+      tags:
+        - customer
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                firstName:
+                  type: string
+                lastName:
+                  type: string
+                phoneNumber:
+                  type: string
+                address:
+                  type: string
+                birthday:
+                  type: string
+                  format: date
+                email:
+                  type: string
+                password:
+                  type: string
+                photo:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: Updated customer data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Customer'
+        '410':
+          description: Customer not found
+        '500':
+          description: Internal server error
+
+    delete:
+      summary: Delete customer by ID
+      tags:
+        - customer
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Customer deleted successfully
+        '410':
+          description: Customer not found
+        '500':
+          description: Internal server error
+
+  /customers/change-password/{id}:
+    patch:
+      summary: Change customer password
+      tags:
+        - customer
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                oldPassword:
+                  type: string
+                newPassword:
+                  type: string
+      responses:
+        '200':
+          description: Password changed successfully
+        '400':
+          description: Invalid old password
+        '404':
+          description: User not found
+        '500':
+          description: Internal server error
+
+  #Employee
+  /employees:
+    get:
+      security:
+        - bearerAuth: []
+      summary: Get all employees
+      tags:
+        - employee
+      responses:
+        '200':
+          description: A list of employees
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Employee'
+        '204':
+          description: No content
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                  errors:
+                    type: string
+
+    post:
+      security:
+        - bearerAuth: []
+      summary: Create a new employee
+      tags:
+        - employee
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                firstName:
+                  type: string
+                lastName:
+                  type: string
+                phoneNumber:
+                  type: string
+                address:
+                  type: string
+                birthday:
+                  type: string
+                  format: date
+                email:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Employee created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Employee'
+        '400':
+          description: Account already exists
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                  errors:
+                    type: string
+
+  /employees/{id}:
+    get:
+      security:
+        - bearerAuth: []
+      summary: Get employee by ID
+      tags:
+        - employee
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Employee details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Employee'
+        '410':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                  errors:
+                    type: string
+
+    patch:
+      security:
+        - bearerAuth: []
+      summary: Update employee by ID
+      tags:
+        - employee
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                firstName:
+                  type: string
+                lastName:
+                  type: string
+                phoneNumber:
+                  type: string
+                address:
+                  type: string
+                birthday:
+                  type: string
+                  format: date
+                email:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Employee updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Employee'
+        '410':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                  errors:
+                    type: string
+
+    delete:
+      security:
+        - bearerAuth: []
+      summary: Delete employee by ID
+      tags:
+        - employee
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Employee deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '410':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                  errors:
+                    type: string
+
+  #Supplier
+  /suppliers:
+    get:
+      tags:
+        - supplier
+      summary: Get all suppliers
+      responses:
+        '200':
+          description: A list of suppliers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Supplier'
+        '204':
+          description: No suppliers found
+        '500':
+          description: Internal server error
+    post:
+      tags:
+        - supplier
+      summary: Create a new supplier
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Supplier'
+      responses:
+        '201':
+          description: Supplier created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Supplier'
+        '400':
+          description: Supplier already exists
+        '500':
+          description: Internal server error
+  /supplier/{id}:
+    get:
+      tags:
+        - supplier
+      summary: Get a supplier by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: A supplier object
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Supplier'
+        '404':
+          description: Supplier not found
+        '500':
+          description: Internal server error
+    patch:
+      tags:
+        - supplier
+      summary: Update a supplier by ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Supplier'
+      responses:
+        '200':
+          description: Supplier updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Supplier'
+        '404':
+          description: Supplier not found
+        '500':
+          description: Internal server error
+
+    delete:
+      tags:
+        - supplier
+      summary: Delete a supplier by ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Supplier deleted successfully
+        '404':
+          description: Supplier not found
+        '500':
+          description: Internal server error
+
+  #Order
+  /orders:
+    get:
+      tags:
+        - order
+      security:
+        - bearerAuth: []
+      summary: Get all orders
+      responses:
+        200:
+          description: A list of orders
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Order'
+        204:
+          description: No orders found
+        500:
+          description: Internal server error
+    post:
+      tags:
+        - order
+      summary: Create a new order
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Order'
+      responses:
+        201:
+          description: Order created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        400:
+          description: Bad request
+        500:
+          description: Internal server error
+  /orders/momo-payment:
+    post:
+      tags:
+        - order
+      summary: Create a new order and initiate MoMo payment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Order'
+      responses:
+        200:
+          description: Payment initiation response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  statusCode:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: 'Payment initiated'
+        400:
+          description: Bad request
+        500:
+          description: Internal server error
+  /orders/callback:
+    post:
+      tags:
+        - order
+      summary: Handle MoMo payment callback
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                resultCode:
+                  type: integer
+                  example: 0
+                orderId:
+                  type: string
+                  example: '123456789'
+      responses:
+        200:
+          description: Order status updated successfully
+        400:
+          description: Payment not successful or order not found
+        500:
+          description: Internal server error
+  /orders/transaction-status:
+    post:
+      tags:
+        - order
+      summary: Get transaction status
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                orderId:
+                  type: string
+                  example: '123456789'
+      responses:
+        200:
+          description: Transaction status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: 'COMPLETED'
+  /orders/search:
+    get:
+      tags:
+        - order
+      summary: Search orders based on a keyword
+      parameters:
+        - in: query
+          name: keyword
+          schema:
+            type: string
+          required: true
+          description: Keyword to search orders
+      responses:
+        200:
+          description: Search results
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Order'
+        400:
+          description: Keyword is required
+        500:
+          description: Internal server error
+  /orders/customer-orders:
+    get:
+      tags:
+        - order
+      summary: Get orders by customer email or phone number
+      parameters:
+        - in: query
+          name: email
+          schema:
+            type: string
+          required: false
+        - in: query
+          name: phoneNumber
+          schema:
+            type: string
+          required: false
+      responses:
+        200:
+          description: A list of orders
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Order'
+        400:
+          description: Email or phone number is required
+        500:
+          description: Internal server error
+  /orders/customer/{customerId}:
+    get:
+      tags:
+        - order
+      summary: Get orders by customer ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: customerId
+          schema:
+            type: integer
+          required: true
+      responses:
+        200:
+          description: A list of orders
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Order'
+        404:
+          description: Customer not found
+        500:
+          description: Internal server error
+  /orders/{id}:
+    get:
+      tags:
+        - order
+      summary: Get order by ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+      responses:
+        200:
+          description: Order details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        403:
+          description: Forbidden
+        404:
+          description: Order not found
+        500:
+          description: Internal server error
+  /orders/user/{userId}:
+    get:
+      tags:
+        - order
+      summary: Get orders by user ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: userId
+          schema:
+            type: integer
+          required: true
+      responses:
+        200:
+          description: A list of orders
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Order'
+        403:
+          description: Forbidden
+        404:
+          description: Customer not found
+        500:
+          description: Internal server error
+  /orders/{orderId}:
+    patch:
+      tags:
+        - order
+      summary: Update an order
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: orderId
+          schema:
+            type: integer
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Order'
+      responses:
+        200:
+          description: Order updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        404:
+          description: Order not found
+        500:
+          description: Internal server error
+  /orders/cancel/{id}:
+    patch:
+      tags:
+        - order
+      summary: Cancel an order by ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+      responses:
+        200:
+          description: Order cancelled successfully
+        404:
+          description: Order not found
+        500:
+          description: Internal server error
+  /orders/delete/{id}:
+    delete:
+      tags:
+        - order
+      summary: Delete an order by ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+      responses:
+        204:
+          description: Order deleted successfully
+        404:
+          description: Order not found
+        500:
+          description: Internal server error
+
+  #Voucher
+  /vouchers:
+    get:
+      tags:
+        - voucher
+      summary: Get all vouchers
+      responses:
+        '200':
+          description: List of vouchers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Voucher'
+        '204':
+          description: No vouchers found
+        '500':
+          description: Internal server error
+    post:
+      tags:
+        - voucher
+      summary: Create a new voucher
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VoucherInput'
+      responses:
+        '201':
+          description: Voucher created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Voucher'
+        '400':
+          description: Bad request
+        '500':
+          description: Internal server error
+
+  /vouchers/{id}:
+    get:
+      tags:
+        - voucher
+      summary: Get a voucher by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Voucher details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Voucher'
+        '410':
+          description: Not found
+        '500':
+          description: Internal server error
+    patch:
+      tags:
+        - voucher
+      summary: Update a voucher by ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VoucherInput'
+      responses:
+        '200':
+          description: Voucher updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Voucher'
+        '410':
+          description: Not found
+        '500':
+          description: Internal server error
+    delete:
+      tags:
+        - voucher
+      summary: Delete a voucher by ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Voucher deleted
+        '410':
+          description: Not found
+        '500':
+          description: Internal server error
+
+  /vouchers/apply-voucher:
+    post:
+      tags:
+        - voucher
+      summary: Apply a voucher to an order
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                voucherCode:
+                  type: string
+              required:
+                - voucherCode
+      responses:
+        '200':
+          description: Voucher applied
+        '400':
+          description: Invalid voucher
+        '410':
+          description: Voucher not found
+        '500':
+          description: Internal server error
+
+  /vouchers/customer/{customerId}:
+    get:
+      tags:
+        - voucher
+      summary: Get vouchers by customer ID
+      parameters:
+        - name: customerId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: List of vouchers for the customer
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Voucher'
+        '404':
+          description: Customer not found
+        '500':
+          description: Internal server error
+    post:
+      tags:
+        - voucher
+      summary: Create a voucher for a customer
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: customerId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VoucherInput'
+      responses:
+        '201':
+          description: Voucher created for the customer
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Voucher'
+        '400':
+          description: Bad request
+        '404':
+          description: Customer not found
+        '500':
+          description: Internal server error
+  #Cart
+  /cart:
+    get:
+      tags:
+        - cart
+      summary: Get the current user's cart
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of cart items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Cart'
+        '500':
+          description: Database Error
+
+    post:
+      tags:
+        - cart
+      summary: Add items to the cart
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/CartItemInput'
+      responses:
+        '200':
+          description: Items added to the cart
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Add to cart successfully'
+        '500':
+          description: Database Error
+
+  /cart/{id}:
+    delete:
+      tags:
+        - cart
+      summary: Remove an item from the cart
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Item removed from the cart
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Remove from cart successfully'
+        '404':
+          description: Not found
+        '500':
+          description: Database Error
+  #Roles
+  /roles:
+    get:
+      tags:
+        - roles
+      summary: Get all roles
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of roles
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: integer
+                    example: 200
+                  payload:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        example: 'Get all roles successfully'
+                      data:
+                        type: object
+                        properties:
+                          roles:
+                            type: array
+                            items:
+                              $ref: '#/components/schemas/Role'
+        '404':
+          description: No content
+        '500':
+          description: Internal server error
+    post:
+      tags:
+        - roles
+      summary: Create a new role
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RoleInput'
+      responses:
+        '201':
+          description: Role created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: integer
+                    example: 200
+                  payload:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        example: 'Create role successfully'
+                      data:
+                        type: object
+                        properties:
+                          roleCreated:
+                            $ref: '#/components/schemas/Role'
+        '409':
+          description: Role already exists
+        '500':
+          description: Internal server error
+
+  /roles/{id}:
+    get:
+      tags:
+        - roles
+      summary: Get a role by ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Role details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: integer
+                    example: 200
+                  payload:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        example: 'Get detail roles successfully'
+                      data:
+                        type: object
+                        properties:
+                          role:
+                            $ref: '#/components/schemas/Role'
+        '404':
+          description: Not found
+        '500':
+          description: Internal server error
+    patch:
+      tags:
+        - roles
+      summary: Update a role by ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RoleInput'
+      responses:
+        '200':
+          description: Role updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: integer
+                    example: 200
+                  payload:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        example: 'Update role successfully'
+                      data:
+                        type: object
+                        properties:
+                          updatedRole:
+                            $ref: '#/components/schemas/Role'
+        '404':
+          description: Not found
+        '500':
+          description: Internal server error
+    delete:
+      tags:
+        - roles
+      summary: Delete a role by ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Role deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: integer
+                    example: 200
+                  payload:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        example: 'Delete role successfully'
+        '404':
+          description: Not found
+        '500':
+          description: Internal server error
+
+  #Article/Categories
+  /article/categories:
+    get:
+      tags:
+        - article
+      summary: Get all post categories
+      responses:
+        200:
+          description: A list of post categories
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PostCategory'
+        500:
+          description: Database Error
+  /article/categories/all:
+    get:
+      tags:
+        - article
+      summary: Admin get all post categories
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: A list of all post categories
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PostCategory'
+        500:
+          description: Database Error
+    post:
+      tags:
+        - article
+      summary: Admin create a post category
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                  example: 'Technology'
+                url:
+                  type: string
+                  example: 'technology'
+                file:
+                  type: string
+                  format: binary
+      responses:
+        201:
+          description: Post category created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostCategory'
+        400:
+          description: Tiêu đề và URL không được trùng lập
+        500:
+          description: Database Error
+  /article/categories/all/{url}:
+    get:
+      tags:
+        - article
+      summary: Admin get post category by URL
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: url
+          schema:
+            type: string
+          required: true
+          description: URL of the post category
+      responses:
+        200:
+          description: Post category data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostCategory'
+        404:
+          description: Couldn't find that category
+        500:
+          description: Database Error
+  /article/categories/{url}:
+    get:
+      tags:
+        - article
+      summary: Client get post category by URL or ID
+      parameters:
+        - in: path
+          name: url
+          schema:
+            type: string
+          required: true
+          description: URL or ID of the post category
+      responses:
+        200:
+          description: Post category data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostCategory'
+        404:
+          description: Couldn't find that category
+        500:
+          description: Database Error
+  /article/categories/check-unique:
+    post:
+      tags:
+        - article
+      summary: Admin check unique fields
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                title: 'Technology'
+                url: 'technology'
+      responses:
+        200:
+          description: Array of not unique fields
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+        400:
+          description: Invalid Post Category field
+        500:
+          description: Database Error
+  /article/categories/check-unique/{id}:
+    post:
+      tags:
+        - article
+      summary: Admin check unique fields by ID
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: ID of the post category
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                title: 'Technology'
+                url: 'technology'
+      responses:
+        200:
+          description: Array of not unique fields
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+        400:
+          description: Invalid Post Category field
+        500:
+          description: Database Error
+  /article/categories/all/{id}:
+    patch:
+      tags:
+        - article
+      summary: Admin update post category by ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: ID of the post category
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                  example: 'Technology'
+                url:
+                  type: string
+                  example: 'technology'
+                file:
+                  type: string
+                  format: binary
+      responses:
+        200:
+          description: Post category updated successfully
+        400:
+          description: Tiêu đề và URL không được trùng lập
+        404:
+          description: Couldn't find that Post Category
+        500:
+          description: Database Error
+    delete:
+      tags:
+        - article
+      summary: Admin delete post category by ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: ID of the post category
+      responses:
+        200:
+          description: Post Category deleted successfully
+        404:
+          description: Couldn't find that Post Category
+        500:
+          description: Database Error
+
+  #Article/Comment
+  /article/comments/all:
+    get:
+      tags:
+        - comment
+      security:
+        - bearerAuth: []
+      summary: Get all comments
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Comment'
+        '500':
+          description: Database Error
+
+  /article/comments/all/search/query:
+    get:
+      tags:
+        - comment
+      security:
+        - bearerAuth: []
+      summary: Search comments
+      parameters:
+        - name: query
+          in: query
+          required: false
+          schema:
+            type: string
+            example: 'content'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Comment'
+        '400':
+          description: Validation error
+        '500':
+          description: Database Error
+
+  /article/comments/all/{id}:
+    patch:
+      tags:
+        - comment
+      security:
+        - bearerAuth: []
+      summary: Update comment by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            example: '60d0fe4f5311236168a109ca'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Comment'
+      responses:
+        '200':
+          description: Comment updated successfully
+        '400':
+          description: Validation error
+        '404':
+          description: Comment not found
+        '500':
+          description: Database Error
+
+    delete:
+      tags:
+        - comment
+      security:
+        - bearerAuth: []
+      summary: Delete comment by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            example: '60d0fe4f5311236168a109ca'
+      responses:
+        '200':
+          description: Comment deleted successfully
+        '404':
+          description: Comment not found
+        '500':
+          description: Database Error
+
+  #Article/Post
+  /article/posts:
+    get:
+      tags:
+        - post
+      summary: Get all published posts
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+          description: Page number for pagination
+        - in: query
+          name: limit
+          schema:
+            type: integer
+          description: Number of items per page
+        - in: query
+          name: authorId
+          schema:
+            type: integer
+          description: Filter by author ID
+        - in: query
+          name: category
+          schema:
+            type: string
+          description: Filter by category
+        - in: query
+          name: search
+          schema:
+            type: string
+          description: Search term
+        - in: query
+          name: type
+          schema:
+            type: string
+          description: Filter by post type
+        - in: query
+          name: sort
+          schema:
+            type: string
+          description: Sort order
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  docs:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Post'
+  /article/posts/authorIds:
+    get:
+      tags:
+        - post
+      summary: Get all author IDs
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: integer
+  /article/posts/all:
+    get:
+      security:
+        - bearerAuth: []
+      tags:
+        - post
+      summary: Get all posts (admin only)
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Post'
+  /article/posts/all/search/query:
+    get:
+      security:
+        - bearerAuth: []
+      tags:
+        - post
+      summary: Search posts (admin only)
+      parameters:
+        - in: query
+          name: query
+          schema:
+            type: string
+          description: Search query
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Post'
+  /article/posts/{url}:
+    get:
+      tags:
+        - post
+      summary: Get post by URL
+      parameters:
+        - in: path
+          name: url
+          required: true
+          schema:
+            type: string
+          description: Post URL
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Post'
+  /article/posts/all/{url}:
+    get:
+      security:
+        - bearerAuth: []
+      tags:
+        - post
+      summary: Get post by URL or ID (admin only)
+      parameters:
+        - in: path
+          name: url
+          required: true
+          schema:
+            type: string
+          description: Post URL or ID
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Post'
+    delete:
+      security:
+        - bearerAuth: []
+      tags:
+        - post
+      summary: Delete a post by URL (admin only)
+      parameters:
+        - in: path
+          name: url
+          required: true
+          schema:
+            type: string
+          description: Post URL
+      responses:
+        '200':
+          description: Post deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+  /article/posts/{url}/comments:
+    get:
+      tags:
+        - post
+      summary: Get comments for a post by URL
+      parameters:
+        - in: path
+          name: url
+          required: true
+          schema:
+            type: string
+          description: Post URL
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Comment'
+    post:
+      tags:
+        - post
+      summary: Post a comment
+      parameters:
+        - in: path
+          name: url
+          required: true
+          schema:
+            type: string
+          description: Post URL
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Comment'
+            example:
+              content: 'This is a comment.'
+              postId: '60d0fe4f5311236168a109ca'
+              status: 'pending'
+      responses:
+        '201':
+          description: Comment created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Comment'
+  /article/posts/all/{url}/comments:
+    get:
+      security:
+        - bearerAuth: []
+      tags:
+        - post
+      summary: Get comments for a post by URL or ID (admin only)
+      parameters:
+        - in: path
+          name: url
+          required: true
+          schema:
+            type: string
+          description: Post URL or ID
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Comment'
+  /article/posts/{url}/like:
+    post:
+      tags:
+        - post
+      summary: Like or unlike a post
+      parameters:
+        - in: path
+          name: url
+          required: true
+          schema:
+            type: string
+          description: Post URL
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                like:
+                  type: boolean
+              example:
+                like: true
+      responses:
+        '200':
+          description: Like status
+          content:
+            application/json:
+              schema:
+                type: boolean
+  /article/posts/all/:
+    post:
+      security:
+        - bearerAuth: []
+      tags:
+        - post
+      summary: Create a post (admin only)
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                content:
+                  type: string
+                url:
+                  type: string
+                status:
+                  type: string
+                  enum: [published, draft]
+                category:
+                  type: string
+                file:
+                  type: string
+                  format: binary
+              example:
+                title: 'Sample Post'
+                content: 'This is a sample post.'
+                url: 'sample-post'
+                status: 'published'
+                category: 'sample-category'
+      responses:
+        '201':
+          description: Post created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Post'
+  /article/posts/all/{id}:
+    patch:
+      security:
+        - bearerAuth: []
+      tags:
+        - post
+      summary: Update a post by ID (admin only)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: Post ID
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                content:
+                  type: string
+                url:
+                  type: string
+                status:
+                  type: string
+                  enum: [published, draft]
+                category:
+                  type: string
+                file:
+                  type: string
+                  format: binary
+              example:
+                title: 'Updated Sample Post'
+                content: 'This is an updated sample post.'
+                url: 'updated-sample-post'
+                status: 'published'
+                category: 'updated-sample-category'
+      responses:
+        '200':
+          description: Post updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Post'
+
+  #Chat
+  /chat/all:
+    get:
+      security:
+        - bearerAuth: []
+      tags:
+        - chat
+      summary: Admin get all chat
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Chat'
+              example:
+                - id: '1'
+                  employeeId: '101'
+                - id: '2'
+                  employeeId: null
+        '500':
+          description: Database error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                example:
+                  message: 'Database Error'
+  /chat/unassigned:
+    get:
+      security:
+        - bearerAuth: []
+      tags:
+        - chat
+      summary: Employee get unassigned chat
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Chat'
+              example:
+                - id: '2'
+                  employeeId: null
+        '500':
+          description: Database error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                example:
+                  message: 'Database Error'
+  /chat/assigned:
+    get:
+      security:
+        - bearerAuth: []
+      tags:
+        - chat
+      summary: Employee get assigned chat
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Chat'
+              example:
+                - id: '1'
+                  employeeId: '101'
+        '500':
+          description: Database error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                example:
+                  message: 'Database Error'
+  /chat/content/{id}:
+    get:
+      tags:
+        - chat
+      summary: Employee get messages by chat ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: Chat ID
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Message'
+              example:
+                - id: 'm1'
+                  chatId: '1'
+                  content: 'Hello'
+                  timestamp: '2024-06-13T12:00:00Z'
+                - id: 'm2'
+                  chatId: '1'
+                  content: 'How can I help you?'
+                  timestamp: '2024-06-13T12:05:00Z'
+        '404':
+          description: Chat not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                example:
+                  message: 'Chat not found'
+        '500':
+          description: Database error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                example:
+                  message: 'Database Error'
+  /chat/message/{id}:
+    get:
+      security:
+        - bearerAuth: []
+      tags:
+        - chat
+      summary: Employee get message by ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: Message ID
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+              example:
+                id: 'm1'
+                chatId: '1'
+                content: 'Hello'
+                timestamp: '2024-06-13T12:00:00Z'
+        '404':
+          description: Message not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                example:
+                  message: 'Message not found'
+        '500':
+          description: Database error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                example:
+                  message: 'Database Error'
+
+  #Authentication User
+  /user/auth/login:
+    post:
+      tags:
+        - authUser
+      summary: Login to the application
+      operationId: login
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  example: admin@gmail.com
+                password:
+                  type: string
+                  example: admin
+                recaptchaToken:
+                  type: string
+                  example: 03AFcWeA4ul0AscM8ute8PGTNXCl4F_3_ylkhAjadMJultV3gZnOvnyTPvpzzgoyFsChXOs7MfCMWLGycXwKSya3c8-i4FfUewgfuAtGqSUbJrCG-3B8xvuBJurhkoe8NTQhKpMtDARExz9kZ13MDH2APk2VE6Pvne1poO7SNQVpe5uyEJbXrTe7NYQFD7bPlJgCF9tV0UtI8gXpj8euQ6_O2Zz4_aKtoPpLRIBrqbj_h0Cxi5DhC8Uxpg5QB0k_xMdqF6O_7MV6FTi7zyN0IPxikwD_4c_efQdMlPMt94_LGOHFICfeKLpsY7I_lgWHIjjJFM4iEiaiCHWVu61jW3VqLKVDL4sldghDzd1N6ImZnAzt41csUqTLgg8niN8YcsN1rEK1iuTtdNhs5KWf1uboz1IuHg5zN-XXSPfHAgG0mtTYDbha0B8zupGASqx5mk2yK2OhDOkOGlio07l_fRuDaNppQMefT7Cxz2VkIN02ALbo_k7qZUuzdWjIGTIUl8k4NPw39rl_8Js8_zxFo0jio9fJbd4LZNL9Xvy0Nf93Ayt2brihopomeUN4nNRxBIXBb22wLFT08FDwposIa0_9q572gpT4AgMBsdM7lLjYhDZ_Ki12wihf5yyexYeU95Qj17zpFzBI4FBeUD97OGildMc4WpIgemwxiAQyoqL5JE1QeivkMQbgWGIiqNjWKnAvLLmH3YnjnMycZ6WNR1dCYD9c1-6NX80Y4D_K9bocDZ2n49WNzGV44QGovz1fTw41QMRTQBHau6CnBRhu4LWRtyoy_BVCJdRfMfnKPHUISSpVP5vciOdD9oYNCQcytAeAhPKk8JTPwfFlCcYaQHFo8pcoIHxywBgerSm8Z94Kdf437gZyT7yeKXhTzKwc6HY6hvBwMBvLWrK60LzLPsTITYmMDce-lxmxZOKImzxuUbaWj3stuNPqHYKxjxHv_enpybnyYD8OvqbrvoSy3GFBWjEZwac9pyIU0rwYTX8c57Eiy6Lvr6uTggVIFrZ3g_LtJD3Hyc0j5r6ugHpSudheqQXWi-ZpMTQjDoTFr1GxPVhHPRNoaS6iNhH5CnmHqwW-rAXw5E7btr-8HIjK5-jWEvZXDf1zR6J0Sm80mDlPQ1jOkcyHvtC_qGUMc4Z5pnL44Nz6ZVvKwUy9iaMYW8U8_AilTCX7No5B2wrVQNOxQUomi5tJaZIUe5ypmJdKU2LGTmoRcnAFOpQJWVux-gu0YaV2_qgJHt4Nkhnyu0fwVb7naJX6yc2OHMkjOIivXpOdk9cuHSUyQtd-mCmEbs7Qa1x0idsLXyt31bre4QHF32OmfqPobb738w2CXuapjRHjAhA-yoxZMz6swoVNXqa3ELrxehv11QYTRSOQO0RglWdxRm6BmBgWS4V--7_XRwo-aznfJolDiUwzyzbzZDNyp4xvw3MgqMEVl4wRrh268X2PQi4wiZyusCzZqi_N0zHWlgmcdfMCpg0P8s2hjJYPwSbDsYgkyEa-WLjsSq1WNl6-fNwsun_3WbpgV23vs-OJfv9WcU3JCYjfoihoYfv8GEHwQHEv_jcBVLwPy2SZJwmnYu48TGoDBbZxwmT-2aSVmNJ0Teh5kZ-xkjGtfZIbwYQZyfEj5737qVNcLt3MZ7o9lfhAJCXtks7UA9TDFaO884I18DyvD-auLhtxdTXWdvyykMqB5M930FROn6sTnTvXtkQCqDAg_GrBVzn1NfhfV-eEdtI6dSrMl6h6PrdleU-gIi5oyFKxT1I3ySYzbYU11UAsgTohyeUiKUxnoAaVxP-i9672BjSRCIFeJB8azZqXcOSxWBQM4dKQoE33kP3I6NDrD1BFb7ck7HK8i2lmL7HcgL3n5w
+
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                    example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImFkbWluIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+  /user/auth/register:
+    post:
+      tags:
+        - authUser
+      summary: Register a new user
+      operationId: register
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                firstName:
+                  type: string
+                  example: John
+                lastName:
+                  type: string
+                  example: Doe
+                email:
+                  type: string
+                  example: johndoe@example.com
+                password:
+                  type: string
+                  example: yourpassword
+                recaptchaToken:
+                  type: string
+                  example: 03AFcWeA4ul0AscM8ute8PGTNXCl4F_3_ylkhAjadMJultV3gZnOvnyTPvpzzgoyFsChXOs7MfCMWLGycXwKSya3c8-i4FfUewgfuAtGqSUbJrCG-3B8xvuBJurhkoe8NTQhKpMtDARExz9kZ13MDH2APk2VE6Pvne1poO7SNQVpe5uyEJbXrTe7NYQFD7bPlJgCF9tV0UtI8gXpj8euQ6_O2Zz4_aKtoPpLRIBrqbj_h0Cxi5DhC8Uxpg5QB0k_xMdqF6O_7MV6FTi7zyN0IPxikwD_4c_efQdMlPMt94_LGOHFICfeKLpsY7I_lgWHIjjJFM4iEiaiCHWVu61jW3VqLKVDL4sldghDzd1N6ImZnAzt41csUqTLgg8niN8YcsN1rEK1iuTtdNhs5KWf1uboz1IuHg5zN-XXSPfHAgG0mtTYDbha0B8zupGASqx5mk2yK2OhDOkOGlio07l_fRuDaNppQMefT7Cxz2VkIN02ALbo_k7qZUuzdWjIGTIUl8k4NPw39rl_8Js8_zxFo0jio9fJbd4LZNL9Xvy0Nf93Ayt2brihopomeUN4nNRxBIXBb22wLFT08FDwposIa0_9q572gpT4AgMBsdM7lLjYhDZ_Ki12wihf5yyexYeU95Qj17zpFzBI4FBeUD97OGildMc4WpIgemwxiAQyoqL5JE1QeivkMQbgWGIiqNjWKnAvLLmH3YnjnMycZ6WNR1dCYD9c1-6NX80Y4D_K9bocDZ2n49WNzGV44QGovz1fTw41QMRTQBHau6CnBRhu4LWRtyoy_BVCJdRfMfnKPHUISSpVP5vciOdD9oYNCQcytAeAhPKk8JTPwfFlCcYaQHFo8pcoIHxywBgerSm8Z94Kdf437gZyT7yeKXhTzKwc6HY6hvBwMBvLWrK60LzLPsTITYmMDce-lxmxZOKImzxuUbaWj3stuNPqHYKxjxHv_enpybnyYD8OvqbrvoSy3GFBWjEZwac9pyIU0rwYTX8c57Eiy6Lvr6uTggVIFrZ3g_LtJD3Hyc0j5r6ugHpSudheqQXWi-ZpMTQjDoTFr1GxPVhHPRNoaS6iNhH5CnmHqwW-rAXw5E7btr-8HIjK5-jWEvZXDf1zR6J0Sm80mDlPQ1jOkcyHvtC_qGUMc4Z5pnL44Nz6ZVvKwUy9iaMYW8U8_AilTCX7No5B2wrVQNOxQUomi5tJaZIUe5ypmJdKU2LGTmoRcnAFOpQJWVux-gu0YaV2_qgJHt4Nkhnyu0fwVb7naJX6yc2OHMkjOIivXpOdk9cuHSUyQtd-mCmEbs7Qa1x0idsLXyt31bre4QHF32OmfqPobb738w2CXuapjRHjAhA-yoxZMz6swoVNXqa3ELrxehv11QYTRSOQO0RglWdxRm6BmBgWS4V--7_XRwo-aznfJolDiUwzyzbzZDNyp4xvw3MgqMEVl4wRrh268X2PQi4wiZyusCzZqi_N0zHWlgmcdfMCpg0P8s2hjJYPwSbDsYgkyEa-WLjsSq1WNl6-fNwsun_3WbpgV23vs-OJfv9WcU3JCYjfoihoYfv8GEHwQHEv_jcBVLwPy2SZJwmnYu48TGoDBbZxwmT-2aSVmNJ0Teh5kZ-xkjGtfZIbwYQZyfEj5737qVNcLt3MZ7o9lfhAJCXtks7UA9TDFaO884I18DyvD-auLhtxdTXWdvyykMqB5M930FROn6sTnTvXtkQCqDAg_GrBVzn1NfhfV-eEdtI6dSrMl6h6PrdleU-gIi5oyFKxT1I3ySYzbYU11UAsgTohyeUiKUxnoAaVxP-i9672BjSRCIFeJB8azZqXcOSxWBQM4dKQoE33kP3I6NDrD1BFb7ck7HK8i2lmL7HcgL3n5w
+
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                    example: 123
+  /user/auth/refresh-token:
+    post:
+      tags:
+        - authUser
+      summary: Refresh the authentication token
+      operationId: refreshToken
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                    example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImFkbWluIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+  /user/auth/login-success:
+    post:
+      tags:
+        - authUser
+      summary: Handles successful login
+      operationId: loginSuccess
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Login successful
+  /user/auth/forgot-password:
+    post:
+      tags:
+        - authUser
+      summary: Initiates the forgot password process
+      operationId: forgotPassword
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  example: user@example.com
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Password reset email sent
+  /user/auth/reset-password:
+    put:
+      tags:
+        - authUser
+      summary: Resets the user password
+      operationId: resetPassword
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                token:
+                  type: string
+                  example: reset-token
+                newPassword:
+                  type: string
+                  example: newPassword123
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Password has been reset
+
+components:
+  schemas:
+    Category:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 14
+        name:
+          type: string
+          example: Các loại kệ giỏ
+        description:
+          type: string
+          example: Kệ giỏ để đồ dùng trong nhà
+      required:
+        - id
+        - name
+
+    Employee:
+      type: object
+      properties:
+        id:
+          type: integer
+        firstName:
+          type: string
+        lastName:
+          type: string
+        phoneNumber:
+          type: string
+        address:
+          type: string
+        photo:
+          type: string
+        birthday:
+          type: string
+          format: date
+        email:
+          type: string
+        roleCode:
+          type: string
+      required:
+        - firstName
+        - lastName
+        - email
+        - roleCode
+    NewCustomer:
+      type: object
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+        phoneNumber:
+          type: string
+        address:
+          type: string
+        birthday:
+          type: string
+          format: date
+        email:
+          type: string
+        password:
+          type: string
+    Supplier:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: Supplier Name
+      required:
+        - name
+    Customer:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        firstName:
+          type: string
+          example: John
+        lastName:
+          type: string
+          example: Doe
+        phoneNumber:
+          type: string
+          example: '123456789'
+        email:
+          type: string
+          example: johndoe@example.com
+    Product:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: 'Sample Product'
+        price:
+          type: number
+          example: 100.0
+        discount:
+          type: number
+          example: 10
+        stock:
+          type: integer
+          example: 50
+    OrderDetail:
+      type: object
+      properties:
+        productId:
+          type: integer
+          example: 1
+        quantity:
+          type: integer
+          example: 2
+        price:
+          type: number
+          example: 100.0
+        discount:
+          type: number
+          example: 10
+    Order:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        shippedDate:
+          type: string
+          format: date-time
+          example: '2023-06-10T15:00:00Z'
+        status:
+          type: string
+          example: 'PENDING'
+        description:
+          type: string
+          example: 'Order description'
+        shippingAddress:
+          type: string
+          example: '123 Street, City'
+        shippingCity:
+          type: string
+          example: 'City'
+        paymentType:
+          type: string
+          example: 'CREDIT_CARD'
+        customerId:
+          type: integer
+          example: 1
+        employeeId:
+          type: integer
+          example: 2
+        orderDetails:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderDetail'
+    Voucher:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        voucherCode:
+          type: string
+          example: 'DISCOUNT20'
+        discountPercentage:
+          type: number
+          example: 20
+        startDate:
+          type: string
+          format: date
+          example: '2023-01-01'
+        expiryDate:
+          type: string
+          format: date
+          example: '2023-12-31'
+        maxUsageCount:
+          type: integer
+          example: 100
+        remainingUsageCount:
+          type: integer
+          example: 100
+    VoucherInput:
+      type: object
+      properties:
+        voucherCode:
+          type: string
+          example: 'DISCOUNT20'
+        discountPercentage:
+          type: number
+          example: 20
+        startDate:
+          type: string
+          format: date
+          example: '2023-01-01'
+        expiryDate:
+          type: string
+          format: date
+          example: '2023-12-31'
+        maxUsageCount:
+          type: integer
+          example: 100
+      required:
+        - voucherCode
+        - discountPercentage
+        - startDate
+        - expiryDate
+        - maxUsageCount
+    Role:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        roleCode:
+          type: string
+          example: 'ADMIN'
+        value:
+          type: string
+          example: 'Administrator'
+    RoleInput:
+      type: object
+      properties:
+        roleCode:
+          type: string
+          example: 'ADMIN'
+        value:
+          type: string
+          example: 'Administrator'
+      required:
+        - roleCode
+        - value
+    Cart:
+      type: object
+      properties:
+        customerId:
+          type: integer
+          example: 1
+        productId:
+          type: integer
+          example: 2
+        quantity:
+          type: integer
+          example: 3
+        product:
+          type: object
+          properties:
+            id:
+              type: integer
+              example: 2
+            name:
+              type: string
+              example: 'Product Name'
+            price:
+              type: number
+              example: 29.99
+
+    CartItemInput:
+      type: object
+      properties:
+        productId:
+          type: integer
+          example: 2
+        quantity:
+          type: integer
+          example: 3
+      required:
+        - productId
+        - quantity
+    PostCategory:
+      type: object
+      properties:
+        _id:
+          type: string
+          example: '60f6c2d5b6c6b0b8b0b8b0b8'
+        title:
+          type: string
+          example: 'Technology'
+        url:
+          type: string
+          example: 'technology'
+        isDeleted:
+          type: boolean
+          example: false
+        createdBy:
+          type: string
+          example: 'John Doe'
+        updatedBy:
+          type: string
+          example: 'Jane Smith'
+        imageUrl:
+          type: object
+          properties:
+            url:
+              type: string
+              example: 'http://res.cloudinary.com/demo/image/upload/v1/categories/technology.jpg'
+            publicId:
+              type: string
+              example: 'categories/technology'
+            name:
+              type: string
+              example: 'technology'
+            size:
+              type: integer
+              example: 123456
+    Comment:
+      type: object
+      properties:
+        _id:
+          type: string
+          example: '60d0fe4f5311236168a109ca'
+        content:
+          type: string
+          example: 'This is a comment'
+        post:
+          type: string
+          example: '60d0fe4f5311236168a109cb'
+        createdAt:
+          type: string
+          format: date-time
+          example: '2021-06-21T17:32:28Z'
+        updatedAt:
+          type: string
+          format: date-time
+          example: '2021-06-21T17:32:28Z'
+    Post:
+      type: object
+      properties:
+        title:
+          type: string
+        content:
+          type: string
+        url:
+          type: string
+        status:
+          type: string
+          enum: [published, draft]
+        authorId:
+          type: number
+        authorName:
+          type: string
+        category:
+          type: string
+        imageUrl:
+          type: object
+          properties:
+            url:
+              type: string
+            publicId:
+              type: string
+            name:
+              type: string
+            size:
+              type: number
+    CommentPost:
+      type: object
+      properties:
+        content:
+          type: string
+        postId:
+          type: string
+        status:
+          type: string
+          enum: [approved, pending, rejected]
+    Chat:
+      type: object
+      properties:
+        id:
+          type: string
+        employeeId:
+          type: string
+          nullable: true
+    Message:
+      type: object
+      properties:
+        id:
+          type: string
+        chatId:
+          type: string
+        content:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
