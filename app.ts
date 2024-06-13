@@ -20,31 +20,23 @@ const file = fs.readFileSync(path.resolve('./openapi.yaml'), 'utf8');
 const swaggerDocument = YAML.parse(file);
 
 //MongoDB connection with initial retry
-// Tạo URI kết nối từ biến môi trường
-const mongooseConnection = `mongodb://${process.env.MONGODB_USER}:${process.env.MONGODB_PASS}@${process.env.MONGODB_URL}`;
-
-// Thiết lập các sự kiện kết nối
+const mongooseConnection = 'mongodb://' + process.env.MONGODB_URL;
 mongoose.connection.on('connected', () => console.log('Connected to ' + mongooseConnection));
 mongoose.connection.on('disconnected', () => console.log('MongoDB lost connection'));
 mongoose.connection.on('error', (error) => console.error('Error in MongoDb connection: ' + error));
-
-// Hàm kết nối MongoDB
 const MongoDBConnect = () => {
   mongoose
     .connect(mongooseConnection, {
-      serverSelectionTimeoutMS: 10000, // Thời gian chờ 10 giây
-    })
-    .then(() => {
-      console.log('MongoDB connection successful');
+      user: process.env.MONGODB_USER,
+      pass: process.env.MONGODB_PASS,
+      serverSelectionTimeoutMS: 5000,
     })
     .catch((err) => {
-      console.error('««««« err »»»»»', err);
+      console.log('««««« err »»»»»', err);
       console.log('MongoDB connection unsuccessful, retry after 5 seconds.');
       setTimeout(MongoDBConnect, 5000);
     });
 };
-
-// Gọi hàm kết nối
 MongoDBConnect();
 
 const app: Express = express();
