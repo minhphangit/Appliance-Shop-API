@@ -2,10 +2,10 @@
   "name": "Appliance-Shop-API",
   "version": "1.0.0",
   "main": "index.js",
-  "repository": "https://github.com/minhcopilot/Appliance-Shop-API.git",
+  "repository": "",
   "author": "<Team nhom 2>",
   "scripts": {
-    "start": "node ./bin/www.ts",
+    "start": "ts-node ./bin/www.ts",
     "dev": "concurrently \"nodemon --config nodemon.json\"",
     "build": "npx tsc -p tsconfig.json"
   },
