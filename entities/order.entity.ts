@@ -47,7 +47,7 @@ export class Order {
   // PAYMENT TYPE
   // ----------------------------------------------------------------------------------------------
   @Column({ name: 'PaymentType', type: 'varchar', length: 20, default: 'CASH' })
-  @IsIn(['CASH', 'MOMO'])
+  @IsIn(['CASH', 'MOMO', 'ZALOPAY','PAYOS'])
   paymentType: string;
 
   @Column({ type: 'int' })

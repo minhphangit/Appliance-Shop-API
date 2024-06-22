@@ -7,8 +7,11 @@ export class Chat {
   @PrimaryGeneratedColumn({ name: 'Id' })
   id: number;
 
-  @Column({ name: 'customerName', type: 'nvarchar', nullable: true })
+  @Column({ name: 'CustomerName', type: 'nvarchar' })
   customerName: string;
+
+  @Column({ name: 'PhoneNumber', type: 'nvarchar' })
+  phoneNumber: string;
 
   @Column({ type: 'int', nullable: true })
   customerId: number;

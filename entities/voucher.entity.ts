@@ -1,7 +1,7 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany, ManyToOne, JoinColumn, ManyToMany } from 'typeorm';
 import { Order } from './order.entity';
-import { Customer } from './customer.entity';
 import { Min, Max } from 'class-validator';
+import { CustomerVoucher } from './customer-voucher.entity';
 @Entity({ name: 'Vouchers' })
 export class Voucher {
   @PrimaryGeneratedColumn({ name: 'Id' })
@@ -29,9 +29,12 @@ export class Voucher {
   @Min(0)
   remainingUsageCount: number;
 
+  @Column({ name: 'VoucherType', type: 'varchar', length: 50 })
+  voucherType: string;
+
   @OneToMany(() => Order, (order) => order.voucher)
   orders: Order[];
 
-  @ManyToOne(() => Customer, (customer) => customer.vouchers)
-  customer: Customer;
+  @OneToMany(() => CustomerVoucher, (v) => v.voucher)
+  customerVouchers: CustomerVoucher[];
 }

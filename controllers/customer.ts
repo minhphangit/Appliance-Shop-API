@@ -162,7 +162,7 @@ const forgotPassword = asyncHandler(async (req: any, res: any) => {
     const html = `Nếu bạn thực hiện đặt lại mật khẩu cho tài khoản cửa hàng đồ gia dụng
       thì nhấn vào link sau đây để đặt lại mật khẩu cho tài khoản email của mình:
       Link này sẽ hết hạn sau 15 phút kể từ bây giờ.
-      <a href=${process.env.CLIENT_URL}/reset-password/${resetToken}> Nhấn vào đây</a>
+      <a href=${process.env.CLIENT_URL}/reset-password/?token=${resetToken}> Nhấn vào đây</a>
       `;
     const data = {
       email: email,

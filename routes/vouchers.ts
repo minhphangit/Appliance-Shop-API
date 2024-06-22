@@ -2,14 +2,73 @@ import express, { Request, Response } from 'express';
 import { AppDataSource } from '../data-source';
 import { Voucher } from '../entities/voucher.entity';
 import { Customer } from '../entities/customer.entity';
+import { CustomerVoucher } from '../entities/customer-voucher.entity';
 const router = express.Router();
 const repository = AppDataSource.getRepository(Voucher);
 import { format } from 'date-fns';
-
 import { allowRoles } from '../middlewares/verifyRoles';
 import { passportVerifyToken } from '../middlewares/passport';
 import passport from 'passport';
 passport.use('jwt', passportVerifyToken);
+
+// get vouchers for customer
+router.get(
+  '/get-vouchers-for-customer/:customerId',
+  passport.authenticate('jwt', { session: false }),
+  allowRoles('R1', 'R2', 'R3'),
+  async (req: Request, res: Response) => {
+    try {
+      const { customerId } = req.params;
+      const customerRepository = AppDataSource.getRepository(Customer);
+      const customer = await customerRepository.findOne({ where: { id: parseInt(customerId) } });
+
+      if (!customer) {
+        return res.status(410).json({ message: 'Customer not found' });
+      }
+
+      const customerVoucherRepository = AppDataSource.getRepository(CustomerVoucher);
+      const customerVouchers = await customerVoucherRepository.find({ where: { customerId: parseInt(customerId) } });
+
+      if (customerVouchers.length === 0) {
+        return res.status(204).json({ message: 'No vouchers found for customer' });
+      }
+      res.status(200).json(customerVouchers);
+    } catch (error: any) {
+      console.log('««««« error »»»»»', error);
+      res.status(500).json({ error: 'Internal server error', errors: error });
+    }
+  },
+);
+
+//Add voucher for customer
+router.post('/add-voucher-for-customer', passport.authenticate('jwt', { session: false }), allowRoles('R1', 'R3'), async (req: Request, res: Response) => {
+  try {
+    const { customerId, voucherCode } = req.body;
+    const customerRepository = AppDataSource.getRepository(Customer);
+    const customer = await customerRepository.findOne({ where: { id: customerId } });
+
+    if (!customer) {
+      return res.status(410).json({ message: 'Customer not found' });
+    }
+    const voucherRepository = AppDataSource.getRepository(Voucher);
+    const voucher = await voucherRepository.findOne({ where: { voucherCode: voucherCode } });
+    if (!voucher) {
+      return res.status(410).json({ message: 'Voucher not found' });
+    }
+
+    const customerVoucherRepository = AppDataSource.getRepository(CustomerVoucher);
+    const newCustomerVoucher = new CustomerVoucher();
+    newCustomerVoucher.customerId = customerId;
+    newCustomerVoucher.voucherId = voucher.id;
+    newCustomerVoucher.voucherCode = voucherCode;
+
+    await customerVoucherRepository.save(newCustomerVoucher);
+    res.status(200).json({ message: 'Voucher added for customer' });
+  } catch (error: any) {
+    console.log('««««« error »»»»»', error);
+    res.status(500).json({ error: 'Internal server error', errors: error });
+  }
+});
 
 /* GET vouchers */
 router.get('/', async (req: Request, res: Response, next: any) => {
@@ -94,7 +153,7 @@ router.patch('/:id', passport.authenticate('jwt', { session: false }), allowRole
     if (!voucher) {
       return res.status(410).json({ message: 'Not found' });
     }
-    const { voucherCode, discountPercentage, startDate, expiryDate, maxUsageCount } = req.body;
+    const { voucherCode, discountPercentage, startDate, expiryDate, maxUsageCount, voucherType } = req.body;
 
     const startDateBirthday = format(new Date(startDate), 'yyyy-MM-dd');
     const expiryDateBirthday = format(new Date(expiryDate), 'yyyy-MM-dd');
@@ -105,6 +164,7 @@ router.patch('/:id', passport.authenticate('jwt', { session: false }), allowRole
       remainingUsageCount: maxUsageCount,
       voucherCode: voucherCode || voucher.voucherCode,
       discountPercentage: discountPercentage || voucher.discountPercentage,
+      voucherType: voucher.voucherType || voucherType,
     });
     res.status(200).json(voucherUpdated);
   } catch (error: any) {
@@ -146,71 +206,4 @@ router.post('/apply-voucher', async (req: Request, res: Response, next: any) => 
   }
 });
 
-/* get voucher by customerId */
-router.get('/customer/:customerId', async (req: Request, res: Response, next: any) => {
-  try {
-    const customerId = parseInt(req.params.customerId);
-    const customerRepository = AppDataSource.getRepository(Customer);
-
-    const customer = await customerRepository.findOneBy({ id: customerId });
-    if (!customer) {
-      return res.status(404).json({ message: 'Customer not found' });
-    }
-
-    const vouchers = await repository.find({
-      where: { customer: customer },
-      relations: ['customer'],
-    });
-
-    res.status(200).json(vouchers);
-  } catch (error: any) {
-    res.status(500).json({ error: 'Internal server error', errors: error });
-  }
-});
-
-/* POST voucher for a customer */
-router.post('/customer/:customerId', passport.authenticate('jwt', { session: false }), async (req: Request, res: Response, next: any) => {
-  try {
-    const customerId = parseInt(req.params.customerId);
-    const { voucherCode, discountPercentage, startDate, expiryDate, maxUsageCount } = req.body;
-
-    const customerRepository = AppDataSource.getRepository(Customer);
-    const customer = await customerRepository.findOneBy({ id: customerId });
-    if (!customer) {
-      return res.status(404).json({ message: 'Customer not found' });
-    }
-
-    // Validate voucher data
-    if (!voucherCode || !discountPercentage || !startDate || !expiryDate || !maxUsageCount) {
-      return res.status(400).json({ message: 'All required fields must be provided' });
-    }
-
-    if (discountPercentage < 0 || discountPercentage > 100) {
-      return res.status(400).json({ message: 'Discount percentage must be between 0 and 100' });
-    }
-
-    // Check if voucher already exists
-    const existingVoucher = await repository.findOneBy({ voucherCode });
-    if (existingVoucher) {
-      return res.status(400).json({ message: 'Voucher already exists' });
-    }
-
-    // Create new voucher
-    const newVoucher = new Voucher();
-    Object.assign(newVoucher, {
-      voucherCode,
-      discountPercentage,
-      startDate,
-      expiryDate,
-      maxUsageCount,
-      remainingUsageCount: maxUsageCount,
-      customer,
-    });
-
-    const voucherCreated = await repository.save(newVoucher);
-    res.status(201).json(voucherCreated);
-  } catch (error: any) {
-    res.status(500).json({ error: 'Internal server error', errors: error });
-  }
-});
 export default router;

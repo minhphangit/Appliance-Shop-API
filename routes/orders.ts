@@ -1,5 +1,4 @@
 import express, { Express, NextFunction, Request, Response } from 'express';
-
 import { AppDataSource } from '../data-source';
 import { OrderDetail } from '../entities/order-details.entity';
 import { Order } from '../entities/order.entity';
@@ -10,6 +9,9 @@ import { allowRoles } from '../middlewares/verifyRoles';
 import passport from 'passport';
 import { passportSocketVerifyToken } from '../middlewares/passportSocket';
 import axios from 'axios';
+import moment from 'moment';
+import CryptoJS from 'crypto-js';
+import PayOS from '@payos/node';
 
 const AnonymousStrategy = require('passport-anonymous').Strategy;
 const router = express.Router();
@@ -18,8 +20,43 @@ const customerRepository = AppDataSource.getRepository(Customer);
 const orderRepository = AppDataSource.getRepository(Order);
 const orderDetailRepository = AppDataSource.getRepository(OrderDetail);
 const voucherRepository = AppDataSource.getRepository(Voucher);
+
 passport.use('jwt', passportSocketVerifyToken);
 passport.use(new AnonymousStrategy());
+
+// get all customer by total order amount
+router.get('/customers-by-order-value', async (req: Request, res: Response) => {
+  try {
+    const customers = await AppDataSource.getRepository(Customer)
+      .createQueryBuilder('customer')
+      .leftJoinAndSelect('customer.orders', 'order')
+      .leftJoinAndSelect('order.orderDetails', 'orderDetail')
+      .leftJoinAndSelect('order.voucher', 'voucher')
+      .select('customer.id', 'customerId')
+      .addSelect('customer.firstName', 'firstName')
+      .addSelect('customer.lastName', 'lastName')
+      .addSelect('customer.phoneNumber', 'phoneNumber')
+      .addSelect('customer.email', 'email')
+      .addSelect('customer.birthday', 'birthday')
+      .addSelect(
+        'SUM(orderDetail.price * orderDetail.quantity * (1 - orderDetail.discount / 100) * (1 - IFNULL(voucher.discountPercentage, 0) / 100))',
+        'totalOrderValue',
+      )
+      .where('order.status = :status', { status: 'COMPLETED' })
+      .groupBy('customer.id')
+      .addGroupBy('customer.firstName')
+      .addGroupBy('customer.lastName')
+      .addGroupBy('customer.phoneNumber')
+      .addGroupBy('customer.email')
+      .addGroupBy('customer.birthday')
+      .orderBy('totalOrderValue', 'DESC')
+      .getRawMany();
+
+    res.json(customers);
+  } catch (error) {
+    res.status(500).json({ message: 'Internal Server Error', error });
+  }
+});
 
 var accessKey = 'F8BBA842ECF85';
 var secretKey = 'K951B6PE1waDMi640xX08PD3vg6EkVlz';
@@ -252,6 +289,352 @@ router.post('/transaction-status', async (req, res) => {
 
   let result = await axios(options);
   return res.status(200).json(result.data);
+});
+
+const config = {
+  app_id: '2554',
+  key1: 'sdngKKJmqEMzvh5QQcdD2A9XBSKUNaYn',
+  key2: 'trMrHtvjo6myautxDUiAcYsVtaeQ8nhf',
+  endpoint: 'https://sb-openapi.zalopay.vn/v2/create',
+};
+
+router.post('/zalopay-payment', async (req: any, res: Response) => {
+  const {
+    firstName,
+    lastName,
+    phoneNumber,
+    email,
+    shippedDate,
+    status,
+    description,
+    shippingAddress,
+    shippingCity,
+    paymentType,
+    customerId,
+    employeeId,
+    orderDetails,
+    voucherCode,
+    voucherId,
+  } = req.body;
+
+  let order: Partial<Order> = {
+    shippedDate,
+    status,
+    description,
+    shippingAddress,
+    shippingCity,
+    paymentType,
+    customerId,
+    employeeId,
+    voucherId,
+  };
+
+  let percentage = 0;
+  try {
+    if (email) {
+      let customer: any = await customerRepository.findOne({ where: { email } });
+      if (customer.roleCode === 'R3' || customer.roleCode === 'R1') {
+        order.employeeId = customer.id;
+      } else {
+        order.customerId = customer.id;
+      }
+    } else {
+      // Anonymous order - Ensure necessary customer information is provided
+      if (!phoneNumber || !email || !firstName) {
+        return res.status(400).json({ message: 'Vui lòng cung cấp thông tin khách hàng' });
+      }
+      let customer = await customerRepository.findOne({ where: { email } });
+      if (customer) {
+        return res.status(400).json({ message: 'Email đã tồn tại, vui lòng dùng email khác hoặc đăng nhập để mua hàng' });
+      } else {
+        customer = await customerRepository.save({ phoneNumber, email, firstName, lastName });
+        order.customerId = customer.id;
+      }
+    }
+
+    if (voucherCode) {
+      const voucher = await voucherRepository.findOne({ where: { voucherCode } });
+      if (!voucher) {
+        return res.status(400).json({ message: 'Voucher không hợp lệ' });
+      }
+      order.voucherId = voucher.id;
+      percentage = voucher.discountPercentage;
+    }
+
+    let totalAmount = 0;
+
+    for (const od of orderDetails) {
+      const product = await productRepository.findOne({ where: { id: od.productId } });
+      if (!product) {
+        return res.status(400).json({ message: 'Sản phẩm không tồn tại' });
+      }
+      if (product.price !== od.price || product.discount !== od.discount) {
+        return res.status(400).json({ message: 'Giá của sản phẩm đã thay đổi, vui lòng thử lại' });
+      }
+      if (product.stock < od.quantity) {
+        return res.status(400).json({ message: 'Số lượng sản phẩm không đủ' });
+      }
+      product.stock -= od.quantity;
+      await productRepository.save(product);
+      totalAmount += (product.price * od.quantity * (100 - product.discount)) / 100;
+    }
+
+    const newOrder = orderRepository.create(order);
+    const savedOrder = await orderRepository.save(newOrder);
+
+    if (orderDetails && orderDetails.length > 0) {
+      const orderDetailEntities = orderDetails.map((od: any) => {
+        return orderDetailRepository.create({
+          ...od,
+          order: savedOrder,
+        });
+      });
+
+      await orderDetailRepository.save(orderDetailEntities);
+    }
+
+    let amount = totalAmount;
+
+    // Apply voucher discount (if any)
+    if (percentage) {
+      amount = (amount * (100 - percentage)) / 100;
+    }
+
+    const embed_data = {
+      redirecturl: `${process.env.CLIENT_URL}/profile/order`,
+    };
+
+    const items = [{}];
+    const transID = `${savedOrder.id}`;
+    const zalopayOrder: any = {
+      app_id: config.app_id,
+
+      app_trans_id: `${moment().format('YYMMDD')}_${transID}`,
+      app_user: 'user123',
+      app_time: Date.now(),
+      item: JSON.stringify(items),
+      embed_data: JSON.stringify(embed_data),
+      amount: amount,
+      description: `Thanh toán đơn hàng có mã #${transID} Haven Shop`,
+      bank_code: '',
+      callback_url: `${process.env.SERVER_URL}/orders/zalopay-callback`,
+    };
+
+    const data =
+      config.app_id +
+      '|' +
+      zalopayOrder.app_trans_id +
+      '|' +
+      zalopayOrder.app_user +
+      '|' +
+      zalopayOrder.amount +
+      '|' +
+      zalopayOrder.app_time +
+      '|' +
+      zalopayOrder.embed_data +
+      '|' +
+      zalopayOrder.item;
+    zalopayOrder.mac = CryptoJS.HmacSHA256(data, config.key1).toString();
+
+    try {
+      const result = await axios.post(config.endpoint, null, { params: zalopayOrder });
+      return res.status(200).json(result.data);
+    } catch (error) {
+      res.status(500).json({ message: 'Đã xảy ra lỗi khi tạo đơn hàng mới.' });
+    }
+  } catch (error) {
+    res.status(500).json({ message: 'Đã xảy ra lỗi khi tạo đơn hàng mới.' });
+  }
+});
+
+router.post('/zalopay-callback', async (req: Request, res: Response) => {
+  let result: any = {};
+
+  try {
+    let dataStr = req.body.data;
+    let reqMac = req.body.mac;
+
+    let mac = CryptoJS.HmacSHA256(dataStr, config.key2).toString();
+
+    if (reqMac !== mac) {
+      result.return_code = -1;
+      result.return_message = 'mac not equal';
+    } else {
+      let dataJson = JSON.parse(dataStr);
+      const order = await orderRepository.findOne({ where: { id: dataJson['app_trans_id'].split('_')[1] } });
+      if (order) {
+        order.status = 'COMPLETED';
+        await orderRepository.save(order);
+        result.return_code = 1;
+        result.return_message = 'success';
+      } else {
+        result.return_code = -1;
+        result.return_message = 'Order not found';
+      }
+    }
+  } catch (ex: any) {
+    console.log('««««« error »»»»»', ex);
+    result.return_code = 0;
+    result.return_message = ex.message;
+  }
+
+  res.json(result);
+});
+
+const payos = new PayOS(`${process.env.PAYOS_CLIENT_ID}`, `${process.env.PAYOS_API_KEY}`, `${process.env.PAYOS_CHECKSUM_KEY}`);
+
+router.post('/payos-payment', async (req: any, res: Response) => {
+  const {
+    firstName,
+    lastName,
+    phoneNumber,
+    email,
+    shippedDate,
+    status,
+    description,
+    shippingAddress,
+    shippingCity,
+    paymentType,
+    customerId,
+    employeeId,
+    orderDetails,
+    voucherCode,
+    voucherId,
+  } = req.body;
+
+  try {
+    let order: Partial<Order> = {
+      shippedDate,
+      status,
+      description,
+      shippingAddress,
+      shippingCity,
+      paymentType,
+      customerId,
+      employeeId,
+      voucherId,
+    };
+
+    let percentage = 0;
+    if (email) {
+      let customer: any = await customerRepository.findOne({ where: { email } });
+      if (customer.roleCode === 'R3' || customer.roleCode === 'R1') {
+        order.employeeId = customer.id;
+      } else {
+        order.customerId = customer.id;
+      }
+    } else {
+      // Anonymous order - Ensure necessary customer information is provided
+      if (!phoneNumber || !email || !firstName) {
+        return res.status(400).json({ message: 'Vui lòng cung cấp thông tin khách hàng' });
+      }
+      let customer = await customerRepository.findOne({ where: { email } });
+      if (customer) {
+        return res.status(400).json({ message: 'Email đã tồn tại, vui lòng dùng email khác hoặc đăng nhập để mua hàng' });
+      } else {
+        customer = await customerRepository.save({ phoneNumber, email, firstName, lastName });
+        order.customerId = customer.id;
+      }
+    }
+
+    if (voucherCode) {
+      const voucher = await voucherRepository.findOne({ where: { voucherCode } });
+      if (!voucher) {
+        return res.status(400).json({ message: 'Voucher không hợp lệ' });
+      }
+      order.voucherId = voucher.id;
+      percentage = voucher.discountPercentage;
+    }
+
+    let totalAmount = 0;
+
+    for (const od of orderDetails) {
+      const product = await productRepository.findOne({ where: { id: od.productId } });
+      if (!product) {
+        return res.status(400).json({ message: 'Sản phẩm không tồn tại' });
+      }
+      if (product.price !== od.price || product.discount !== od.discount) {
+        return res.status(400).json({ message: 'Giá của sản phẩm đã thay đổi, vui lòng thử lại' });
+      }
+      if (product.stock < od.quantity) {
+        return res.status(400).json({ message: 'Số lượng sản phẩm không đủ' });
+      }
+      product.stock -= od.quantity;
+      await productRepository.save(product);
+      totalAmount += (product.price * od.quantity * (100 - product.discount)) / 100;
+    }
+
+    const newOrder = orderRepository.create(order);
+    const savedOrder = await orderRepository.save(newOrder);
+
+    if (orderDetails && orderDetails.length > 0) {
+      const orderDetailEntities = orderDetails.map((od: any) => {
+        return orderDetailRepository.create({
+          ...od,
+          order: savedOrder,
+        });
+      });
+
+      await orderDetailRepository.save(orderDetailEntities);
+    }
+
+    let amount = totalAmount;
+
+    // Áp dụng giảm giá voucher (nếu có)
+    if (percentage) {
+      amount = (amount * (100 - percentage)) / 100;
+    }
+    const orderPayos = {
+      amount: amount,
+      description: `Thanh toán đơn hàng ${savedOrder.id}`,
+      orderCode: savedOrder.id,
+      returnUrl: `${process.env.SERVER_URL}/orders/payos-callback`,
+      cancelUrl: `${process.env.SERVER_URL}/orders/payos-callback`,
+    };
+    const paymentLink = await payos.createPaymentLink(orderPayos);
+    res.status(200).json(paymentLink.checkoutUrl);
+  } catch (error) {
+    console.log('««««« error »»»»»', error);
+    res.status(500).json({ message: 'Đã xảy ra lỗi khi tạo đơn hàng mới.' });
+  }
+});
+
+router.get('/payos-callback', async (req: Request, res: Response) => {
+  const { orderCode, status, cancel, code } = req.query;
+  const orderId: any = orderCode as string;
+  if (cancel && status === 'CANCELLED' && orderCode && orderCode !== 'undefined') {
+    const order = await orderRepository.findOne({ where: { id: orderId } });
+    if (order) {
+      order.status = 'CANCELLED';
+      await orderRepository.save(order);
+      return res.redirect(`${process.env.CLIENT_URL}/profile/order`);
+    } else {
+      return res.status(400).json({ message: 'Order not found.' });
+    }
+  } else if (code === '00' && cancel === 'false' && status === 'PAID' && orderCode && orderCode !== 'undefined') {
+    return res.redirect(`${process.env.CLIENT_URL}/profile/order`);
+  } else {
+    return res.status(400).json({ message: 'Payment not successful.' });
+  }
+});
+
+router.post('/receive-hook', async (req: Request, res: Response) => {
+  const { code, data } = req.body;
+  if (code === '00') {
+    try {
+      const order = await orderRepository.findOne({ where: { id: data.orderCode } });
+      if (order) {
+        order.status = 'COMPLETED';
+        await orderRepository.save(order);
+        return res.status(200).json({ message: 'Order status updated to complete.' });
+      } else {
+        return res.status(400).json({ message: 'Order not found.' });
+      }
+    } catch (error) {
+      console.log('««««« error »»»»»', error);
+      return res.status(500).json({ message: 'Error updating order status.' });
+    }
+  }
 });
 // Search orders based on a keyword (product name or order ID)
 router.get('/search', async (req: Request, res: Response) => {

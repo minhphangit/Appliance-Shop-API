@@ -13,7 +13,10 @@ export const chatAccept = async (socket: any, io: Server, data: socketData) => {
       await chatRespository.save(chat);
       socket.join(chat.id.toString());
       console.log(socket.request.user.email + ' joined room ' + chat.id.toString());
-      io.to('employees').emit('assigned', { type: 'chat-accepted', message: { customerName: chat.customerName, id: chat.id } });
+      io.to('employees').emit('assigned', {
+        type: 'chat-accepted',
+        message: { customerName: chat.customerName, id: chat.id, employeeId: socket.request.user.id, phoneNumber: chat.phoneNumber },
+      });
       console.log('Chat accepted');
     } else {
       socket.emit('server-message', { type: 'error', message: 'Chat not found' });

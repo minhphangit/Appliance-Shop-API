@@ -1,4 +1,4 @@
-import { Entity, Column, OneToMany, PrimaryGeneratedColumn, BeforeInsert, BeforeUpdate, ManyToOne } from 'typeorm';
+import { Entity, Column, OneToMany, PrimaryGeneratedColumn, BeforeInsert, BeforeUpdate, ManyToOne, AfterLoad } from 'typeorm';
 import { Order } from './order.entity';
 import { Role } from './role.entity';
 import * as bcrypt from 'bcrypt';
@@ -64,13 +64,21 @@ export class Employee {
   @OneToMany(() => Chat, (c) => c.employee)
   chats: Chat[];
 
+  private tempPassword: string;
+
+  @AfterLoad()
+  loadTempPassword() {
+    this.tempPassword = this.password;
+  }
   @BeforeInsert()
   @BeforeUpdate()
   async hashPassword() {
-    if (this.password) {
+    if (this.tempPassword !== this.password) {
       this.password = await bcrypt.hash(this.password, 10);
+      console.log('Password changed');
     }
   }
+
   // Validate password during login or other authentication scenarios
   async validatePassword(plainPassword: string): Promise<boolean> {
     return await bcrypt.compare(plainPassword, this.password);

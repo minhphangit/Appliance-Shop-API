@@ -5,6 +5,8 @@ import { sendMessage } from './sendMessage';
 import { chatClose } from './chatClose';
 import { AppDataSource } from '../../data-source';
 import { Chat } from '../../entities/chat.entity';
+import { customerConnect } from './customerConnect';
+import { socketVerfiyCaptcha } from '../../middlewares/socket';
 
 export type socketData = {
   type: string;
@@ -14,6 +16,7 @@ export type socketData = {
 const chatRespository = AppDataSource.getRepository(Chat);
 
 export const chatHandler = async (io: Server, socket: any) => {
+  socket.use((packet: any, next: any) => socketVerfiyCaptcha(packet, socket, next));
   socket.on('employee-message', async (data: socketData) => {
     if (socket.request.user?.roleCode !== 'R3' && socket.request.user?.roleCode !== 'R1') {
       return;
@@ -37,14 +40,17 @@ export const chatHandler = async (io: Server, socket: any) => {
       console.log('employee sent a message');
       sendMessage(socket, io, data, 'employee');
     }
+    if (data.type === 'close-chat') {
+      console.log('employee closed chat');
+      chatClose(socket, io, data);
+    }
   });
   socket.on('client-message', (data: socketData) => {
     if (data.type === 'start-chat') {
       chatStart(socket, io, data);
     }
     if (data.type === 'customer-connected') {
-      socket.join(data.message.toString());
-      console.log('customer joined room ' + data.message.toString());
+      customerConnect(socket, io, data);
     }
     if (data.type === 'new-message') {
       console.log('client sent a message');

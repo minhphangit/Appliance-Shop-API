@@ -16,11 +16,7 @@ router.get('/', passport.authenticate('jwt', { session: false }), allowRoles('R1
         message: 'No content',
       });
     } else {
-      const payload = {
-        message: 'Get all roles successfully',
-        data: { roles },
-      };
-      return res.status(200).json({ status: 200, payload: payload });
+      return res.status(200).json(roles);
     }
   } catch (error: any) {
     return res.status(500).json({ message: 'Internal server', errors: error });
@@ -34,11 +30,7 @@ router.get('/:id', passport.authenticate('jwt', { session: false }), allowRoles(
         message: 'Not found',
       });
     } else {
-      const payload = {
-        message: 'Get detail roles successfully',
-        data: { role },
-      };
-      return res.status(200).json({ status: 200, payload: payload });
+      return res.status(200).json(role);
     }
   } catch (error: any) {
     return res.status(500).json({ message: 'Internal server', errors: error });
@@ -64,11 +56,8 @@ router.post('/', passport.authenticate('jwt', { session: false }), allowRoles('R
       ...req.body,
     };
     const roleCreated = await repository.save(newRole);
-    const payload = {
-      message: 'Create role successfully',
-      data: { roleCreated },
-    };
-    return res.status(201).json({ status: 200, payload: payload });
+
+    return res.status(201).json(roleCreated);
   } catch (error: any) {
     return res.status(500).json({ message: 'Internal server', errors: error });
   }
@@ -86,11 +75,8 @@ router.patch('/:id', passport.authenticate('jwt', { session: false }), allowRole
       await repository.save(role);
 
       const updatedRole = await repository.findOneBy({ id: parseInt(req.params.id) });
-      const payload = {
-        message: 'Update role successfully',
-        data: { updatedRole },
-      };
-      return res.status(200).json({ status: 200, payload: payload });
+
+      return res.status(200).json(updatedRole);
     }
   } catch (error: any) {
     return res.status(500).json({ message: 'Internal server', errors: error });
@@ -106,7 +92,7 @@ router.delete('/:id', passport.authenticate('jwt', { session: false }), allowRol
       });
     } else {
       await repository.remove(role);
-      return res.status(200).json({ status: 200, payload: { message: 'Delete role successfully' } });
+      return res.status(200).json(role);
     }
   } catch (error: any) {
     return res.status(500).json({ message: 'Internal server', errors: error });

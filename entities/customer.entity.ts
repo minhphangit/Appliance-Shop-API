@@ -1,4 +1,4 @@
-import { Entity, Column, OneToMany, PrimaryGeneratedColumn, BeforeInsert, BeforeUpdate, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, Column, OneToMany, PrimaryGeneratedColumn, BeforeInsert, BeforeUpdate, ManyToOne, JoinColumn, ManyToMany, JoinTable } from 'typeorm';
 import { Order } from './order.entity';
 import { Role } from './role.entity';
 import * as bcrypt from 'bcrypt';
@@ -6,6 +6,7 @@ import { Chat } from './chat.entity';
 import { IsEmail, IsPhoneNumber } from 'class-validator';
 import { Cart } from './cart.entity';
 import { Voucher } from './voucher.entity';
+import { CustomerVoucher } from './customer-voucher.entity';
 const crypto = require('crypto');
 @Entity({ name: 'Customers' })
 export class Customer {
@@ -68,8 +69,8 @@ export class Customer {
   @OneToMany(() => Cart, (c) => c.customer)
   carts: Cart[];
 
-  @OneToMany(() => Voucher, (voucher) => voucher.customer)
-  vouchers: Voucher[];
+  @OneToMany(() => CustomerVoucher, (v) => v.customer)
+  customerVouchers: CustomerVoucher[];
 
   @BeforeInsert()
   @BeforeUpdate()

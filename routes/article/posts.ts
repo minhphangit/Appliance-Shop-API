@@ -11,6 +11,7 @@ import cloudinary from '../../utils/cloudinary';
 import { ImageUrl, imageUrl } from '../../entities/postImage.model';
 import { stripContent, stripTags } from '../../utils/striphtmltag';
 import { PostCategory } from '../../entities/post-category.model';
+import { verifyRecaptcha } from '../../controllers/customer';
 const { passportVerifyToken } = require('../../middlewares/passport');
 export const PostsRouter = express.Router();
 
@@ -18,12 +19,19 @@ passport.use('admin', passportVerifyToken);
 
 // Client get all post
 PostsRouter.get('/', async (req: any, res: Response, next: NextFunction) => {
-  const page = parseInt(req.query.page as string) || 1;
-  const limit = parseInt(req.query.limit as string) || 10;
+  const pagination = req.query.pagination || 'true';
+  const page = pagination === 'false' ? undefined : parseInt(req.query.page as string) || 1;
+  const limit = pagination === 'false' ? undefined : parseInt(req.query.limit as string) || 10;
   const authorId: number = req.query.authorId;
   const { category, search, type, sort } = req.query;
   const query: any = {};
-  const paginateOptions: any = { page, limit, lean: true, populate: [{ path: 'commentsCount', match: { status: 'approved' } }, { path: 'category' }] };
+  const paginateOptions: any = {
+    page,
+    limit,
+    pagination,
+    lean: true,
+    populate: [{ path: 'commentsCount', match: { status: 'approved' } }, { path: 'category' }],
+  };
   if (sort) {
     paginateOptions.sort = sort;
   }
@@ -33,7 +41,8 @@ PostsRouter.get('/', async (req: any, res: Response, next: NextFunction) => {
       if (!selectedCategory) {
         return res.status(404).json({ message: `Couldn't find that category` });
       }
-      query['postCategoryId'] = selectedCategory._id;
+      let childCategories = await PostCategory.find({ parentId: selectedCategory._id }).lean();
+      query['postCategoryId'] = { $in: [selectedCategory._id, ...childCategories.map((child) => child._id)] };
     } catch (error) {
       console.log(error);
       return res.status(500).json({ message: 'Database Error' });
@@ -53,6 +62,7 @@ PostsRouter.get('/', async (req: any, res: Response, next: NextFunction) => {
     query['authorId'] = authorId;
   }
   query['status'] = 'published';
+  console.log(paginateOptions);
   try {
     const result = await Post.paginate(query, paginateOptions);
     const stripcontent = {
@@ -213,7 +223,7 @@ PostsRouter.get(
 );
 
 //Client post comment
-PostsRouter.post('/:url/comments', async (req: Request, res: Response, next: NextFunction) => {
+PostsRouter.post('/:url/comments', verifyRecaptcha, async (req: Request, res: Response, next: NextFunction) => {
   try {
     await validateSchema(commentSchema, req.body);
     try {

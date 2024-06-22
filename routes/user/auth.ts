@@ -25,11 +25,12 @@ router.get('/google', passportGG.authenticate('google', { scope: ['profile', 'em
 router.get('/google/callback', (req, res, next) => {
   passportGG.authenticate('google', (err: any, profile: Profile) => {
     if (err) {
+      console.log('««««« err »»»»»', err);
       return res.status(500).send('Authentication failed');
     }
     req.user = profile;
     //@ts-ignore
-    res.redirect(`${process.env.CLIENT_URL}/login-success/` + req.user?.email);
+    res.redirect(`${process.env.CLIENT_URL}/login-success/?email=` + req.user?.email);
   })(req, res, next);
 });
 
@@ -43,13 +44,13 @@ router.get('/facebook/callback', (req, res, next) => {
     }
     req.user = profile;
     //@ts-ignore
-    res.redirect(`${process.env.CLIENT_URL}/login-success/` + req.user?.email);
+    res.redirect(`${process.env.CLIENT_URL}/login-success/?email=` + req.user?.email);
   })(req, res, next);
 });
 
 router.post('/login-success', loginSuccess);
 
 // forgot password
-router.post('/forgot-password', forgotPassword);
+router.post('/forgot-password', verifyRecaptcha, forgotPassword);
 router.put('/reset-password', resetPassword);
 export default router;

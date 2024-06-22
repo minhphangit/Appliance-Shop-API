@@ -7,6 +7,7 @@ import { allowRoles } from '../../middlewares/verifyRoles';
 import passport from 'passport';
 import { uploadCloud } from '../../middlewares/fileMulter';
 import cloudinary from '../../utils/cloudinary';
+import { ObjectId } from 'mongodb';
 const { passportVerifyToken } = require('../../middlewares/passport');
 export const PostCategoriesRouter = express.Router();
 
@@ -57,8 +58,14 @@ PostCategoriesRouter.get(
 //Client get post category by url or id
 PostCategoriesRouter.get('/:url', async (req: Request, res: Response, next: NextFunction) => {
   const url = req.params.url;
+  let query = {};
+  if (ObjectId.isValid(url)) {
+    query = { _id: url };
+  } else {
+    query = { url: url };
+  }
   try {
-    let categoryData = await PostCategory.findOne({ $or: [{ _id: url }, { url: url }], isDeleted: false })
+    let categoryData = await PostCategory.findOne({ ...query, isDeleted: false })
       .lean({ virtuals: true })
       .populate(['postCount', 'parentCategory']);
     categoryData ? res.json(categoryData) : res.status(404).json({ message: `Couldn't find that category` });
